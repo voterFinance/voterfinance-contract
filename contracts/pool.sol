@@ -47,7 +47,7 @@ interface IDelegate {
     function delegate(address delegatee) external;
 }
 
-contract VoteRewards is LPTokenWrapper {
+contract VoteRewards is LPTokenWrapper, Ownable {
     constructor(address _stakeToken) public LPTokenWrapper(_stakeToken) {}
 
     IERC20 public dai = IERC20(0xa1d0E215a23d7030842FC67cE582a6aFa3CCaB83);
@@ -136,9 +136,12 @@ contract VoteRewards is LPTokenWrapper {
         external
         updateReward(address(0))
     {
+        uint256 _dev = reward.mul(1).div(100);
         if (block.timestamp >= periodFinish) {
             //new func
             dai.safeTransferFrom(msg.sender, address(this), reward);
+            dai.safeTransfer(owner(), _dev);
+            reward = reward.sub(_dev);
             rewardRate = reward.div(DURATION);
             sponsor = msg.sender;
             sponsorshipAmount = reward;
@@ -146,7 +149,8 @@ contract VoteRewards is LPTokenWrapper {
             //auction
             require(reward > sponsorshipAmount.mul(110).div(100), "");
             dai.safeTransferFrom(msg.sender, address(this), reward);
-
+            dai.safeTransfer(owner(), _dev);
+            reward = reward.sub(_dev);
             uint256 remaining = periodFinish.sub(block.timestamp);
             uint256 leftover = remaining.mul(rewardRate);
             dai.safeTransfer(sponsor, leftover);

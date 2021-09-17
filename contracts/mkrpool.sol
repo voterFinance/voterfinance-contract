@@ -71,7 +71,7 @@ interface IVoteDelegateFactory {
     function create() external returns (address voteDelegate);
 }
 
-contract MKRVoteRewards is LPTokenWrapper {
+contract MKRVoteRewards is LPTokenWrapper, Ownable {
     IVoteDelegate public voteDelegate;
 
     constructor(address _stakeToken) public LPTokenWrapper(_stakeToken) {
@@ -173,9 +173,12 @@ contract MKRVoteRewards is LPTokenWrapper {
         external
         updateReward(address(0))
     {
+        uint256 _dev = reward.mul(1).div(100);
         if (block.timestamp >= periodFinish) {
             //new func
             dai.safeTransferFrom(msg.sender, address(this), reward);
+            dai.safeTransfer(owner(), _dev);
+            reward = reward.sub(_dev);
             rewardRate = reward.div(DURATION);
             sponsor = msg.sender;
             sponsorshipAmount = reward;
@@ -183,7 +186,8 @@ contract MKRVoteRewards is LPTokenWrapper {
             //auction
             require(reward > sponsorshipAmount.mul(110).div(100), "");
             dai.safeTransferFrom(msg.sender, address(this), reward);
-
+            dai.safeTransfer(owner(), _dev);
+            reward = reward.sub(_dev);
             uint256 remaining = periodFinish.sub(block.timestamp);
             uint256 leftover = remaining.mul(rewardRate);
             dai.safeTransfer(sponsor, leftover);
