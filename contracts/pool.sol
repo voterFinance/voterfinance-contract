@@ -145,6 +145,7 @@ contract VoteRewards is LPTokenWrapper, Ownable {
             rewardRate = reward.div(DURATION);
             sponsor = msg.sender;
             sponsorshipAmount = reward;
+            IDelegate(address(stakeToken)).delegate(msg.sender);
         } else {
             //auction
             require(reward > sponsorshipAmount.mul(110).div(100), "");
